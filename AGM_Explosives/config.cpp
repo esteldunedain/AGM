@@ -29,6 +29,8 @@ class CfgFunctions
 			class hasPlacedExplosives;
 			
 			class initialise{postInit=1;};
+			class initialiseUnit;
+			class isSpecialist;
 			//class JammerInit;
 			
 			class openDetonateUI;
@@ -58,7 +60,32 @@ class CfgFunctions
   count = COUNT; \
 };
 
+#define MACRO_DETONATEACTION 		class AGM_SelfActions { \
+			class AGM_Explosives { \
+				displayName = $STR_AGM_Explosives_Menu;\
+				condition = "true";\
+				statement = "'AGM_Explosives' call AGM_Interaction_fnc_openMenuSelf;";\
+				showDisabled = 1;\
+				priority = 4;\
+				class AGM_Detonate {\
+					displayName = $STR_AGM_Explosives_Detonate;\
+					condition = "[player] call AGM_Explosives_fnc_hasPlacedExplosives and {('AGM_Clacker' in (items player))}";\
+					statement = "[player] call AGM_Explosives_fnc_openDetonateUI;";\
+					showDisabled = 1;\
+					priority = 2;\
+				};\
+			};\
+		};
+
 class CfgVehicles {
+	class All;
+	class AllVehicles: All {
+		MACRO_DETONATEACTION
+	};
+	class LandVehicle;
+	class Car: LandVehicle {
+		MACRO_DETONATEACTION
+	};
 	class Man;
 
 	class CAManBase: Man {
@@ -68,55 +95,52 @@ class CfgVehicles {
 				condition = "true";
 				statement = "'AGM_Explosives' call AGM_Interaction_fnc_openMenuSelf;";
 				showDisabled = 1;
-				priority = 4;
-				
+				priority = 4;				
 				//Sub-menu items
 				class AGM_Detonate {
 					displayName = $STR_AGM_Explosives_Detonate;
-					condition = "[player] call AGM_Explosives_fnc_hasPlacedExplosives and {('AGM_Clacker' in (items player))} && {call AGM_Interaction_fnc_canInteract}";
+					condition = "[player] call AGM_Explosives_fnc_hasPlacedExplosives and {('AGM_Clacker' in (items player))}";
 					statement = "[player] call AGM_Explosives_fnc_openDetonateUI;";
 					showDisabled = 1;
 					priority = 2;
 				};
 				class AGM_Place {
 					displayName = $STR_AGM_Explosives_Place;
-					condition = "(vehicle player == player) and {[player] call AGM_Explosives_fnc_hasExplosives} && {call AGM_Interaction_fnc_canInteract}";
+					condition = "(vehicle player == player) and {[player] call AGM_Explosives_fnc_hasExplosives}";
 					statement = "[player] call AGM_Explosives_fnc_openPlaceUI;";
 					showDisabled = 1;
 					priority = 1;
 				};
 				class AGM_Defuse {
 					displayName = $STR_AGM_Explosives_Defuse;
-					condition = "[player] call AGM_Explosives_fnc_CanDefuse;";
-					statement = "[AGM_Interaction_Target] call AGM_Explosives_fnc_StartDefuse;";
+					condition = "[player] call AGM_Explosives_fnc_CanDefuse";
+					statement = "[player, AGM_Interaction_Target] call AGM_Explosives_fnc_StartDefuse;";
 					showDisabled = 0;
 					priority = 0.8;
 				};
-/*				class AGM_Cellphone {
-					displayName = $STR_AGM_Explosives_cellphone_displayName;
-					condition = "('AGM_Cellphone' in (items player))";
-					statement = "closeDialog 0;createDialog 'RscAGM_PhoneInterface';";
+				class AGM_PlaceExplosive {
+					displayName = $STR_AGM_Explosives_PlaceAction;
+					condition = "AGM_Explosives_pfeh_running AND {!isNull(AGM_Explosives_Setup)}";
+					statement = "[] spawn AGM_Explosives_fnc_Place_Approve;";
 					showDisabled = 0;
-					priority = 0.8;
+					priority = 0.4;
 				};
-				*/
+				// Basic attach, needs to be improved.
+				class AGM_AttachExplosive {
+					displayName = $STR_AGM_Explosives_AttachTo;
+					condition = "AGM_Explosives_pfeh_running AND {!isNull(AGM_Explosives_Setup) AND (cursorTarget isKindOf 'Car') AND (cursorTarget distance AGM_Explosives_Setup) < 2.5}";
+					statement = "[player] call AGM_Explosives_fnc_openPlaceUI;";
+					showDisabled = 0;
+					priority = 0.3;
+				};
+				class AGM_CancelPlace {
+					displayName = $STR_AGM_Explosives_CancelAction;
+					condition = "AGM_Explosives_pfeh_running AND {!isNull(AGM_Explosives_Setup)}";
+					statement = "call AGM_Explosives_fnc_Place_Cancel;";
+					showDisabled = 0;
+					priority = 0.2;
+				};
 			};
-			/*
-			class AGM_ExplosiveJammerOn {
-				displayName = $STR_AGM_Explosives_Jammer_TurnOn;
-				condition = "isClass (configFile >> 'CfgVehicles' >> (backpack player)) and {getNumber(configFile >> 'CfgVehicles' >> (backpack player) >> 'AGM_JammerRange') > 0 and !((unitBackpack player) getVariable ['AGM_JammerEnabled', false])}";
-				statement = "(unitBackpack player) setVariable ['AGM_JammerEnabled', true, true];";
-				showDisabled = 0;
-				priority = 0.1;
-			};
-			class AGM_ExplosiveJammerOff {
-				displayName = $STR_AGM_Explosives_Jammer_TurnOff;
-				condition = "isClass (configFile >> 'CfgVehicles' >> (backpack player)) and {getNumber(configFile >> 'CfgVehicles' >> (backpack player) >> 'AGM_JammerRange') > 0 and (unitBackpack player) getVariable ['AGM_JammerEnabled', false]}";
-				statement = "(unitBackpack player) setVariable ['AGM_JammerEnabled', false, true];";
-				showDisabled = 0;
-				priority = 0.1;
-			};
-			*/
 		};
 	};
 	
@@ -154,6 +178,39 @@ class CfgVehicles {
 			MACRO_ADDITEM(AGM_DefusalKit,24)
 		};
 	};
+	
+	#include "Module.hpp"
+	
+// Add AGM_Clacker and AGM_DefusalKit to every explosive unit.
+class B_Soldier_base_F; class B_soldier_exp_F:B_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class B_engineer_F:B_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class B_Soldier_diver_base_F; class B_diver_exp_F:B_Soldier_diver_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class B_Soldier_recon_base; class B_recon_exp_F:B_Soldier_recon_base {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class B_CTRG_soldier_engineer_exp_F:B_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class I_G_Soldier_base_F; class I_G_engineer_F:I_G_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class I_G_Soldier_exp_F:I_G_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class I_G_engineer_F; class B_G_engineer_F:I_G_engineer_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_G_engineer_F:I_G_engineer_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class I_G_Soldier_exp_F; class B_G_Soldier_exp_F:I_G_Soldier_exp_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_G_Soldier_exp_F:I_G_Soldier_exp_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class I_Soldier_base_F; class I_Soldier_exp_F:I_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class I_engineer_F:I_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class I_Soldier_diver_base_F; class I_diver_exp_F:I_Soldier_diver_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_Soldier_base_F; class O_soldier_exp_F:O_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_engineer_F:O_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_Soldier_diver_base_F; class O_diver_exp_F:O_Soldier_diver_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_Soldier_recon_base; class O_recon_exp_F:O_Soldier_recon_base {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_Soldier_Urban_base; class O_soldierU_exp_F:O_Soldier_Urban_base {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_engineer_U_F:O_Soldier_Urban_base {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class B_Protagonist_VR_F:B_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_Protagonist_VR_F:O_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class I_Protagonist_VR_F:I_Soldier_base_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class B_Soldier_F; class b_soldier_universal_f:B_Soldier_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class B_G_Soldier_F; class b_g_soldier_universal_f:B_G_Soldier_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_Soldier_F; class o_soldier_universal_f:O_Soldier_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class O_G_Soldier_F; class o_g_soldier_universal_f:O_G_Soldier_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class I_soldier_F; class i_soldier_universal_f:I_soldier_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
+class I_G_Soldier_F; class i_g_soldier_universal_f:I_G_Soldier_F {Items[] = {"FirstAidKit","AGM_Clacker", "AGM_DefusalKit"};};
 };
 
 #include "CfgAmmo.hpp"
@@ -161,3 +218,19 @@ class CfgVehicles {
 #include "CfgWeapons.hpp"
 
 #include "ExplosivesUI.hpp"
+
+class CfgActions {
+	class None;
+	class Deactivate:None {
+		show = 0;
+	};
+	class DeactivateMine:None {
+		show = 0;
+	};
+};
+
+class AGM_Parameters {
+  // Boolean Parameters (0/1)
+  AGM_Explosives_RequireSpecialist = 0;
+  AGM_Explosives_PunishNonSpecialists = 1;
+};

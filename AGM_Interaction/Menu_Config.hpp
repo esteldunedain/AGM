@@ -190,7 +190,7 @@ class AGM_Interaction_Dialog {
       h = 0.3 / 9 * safezoneH;
     };
 
-    class Interaction_Icon0 : Interaction_Button0 {
+    /*class Interaction_Icon0 : Interaction_Button0 {
       idc = 20;
       type = 0;
       style = 48;
@@ -268,7 +268,7 @@ class AGM_Interaction_Dialog {
       style = 48;
       colorBackground[] = {0,0,0,0};
       w = 0.3 / 16 * safezoneW;
-    };
+    };*/
 
   };
 };
@@ -312,7 +312,7 @@ class RscAGM_SelectAnItem {
 			h = 0.1;
 			y = 0.605;
 			text = $STR_AGM_Interaction_CancelSelection;
-			action = "closeDialog 0;";
+			action = "closeDialog 0;";   //'Default' call AGM_Interaction_fnc_openMenu;    'Default' call AGM_Interaction_fnc_openMenuSelf;
 		};
 		class approveBtn: AGM_Interaction_Button_Base {
 			idc = 8860;

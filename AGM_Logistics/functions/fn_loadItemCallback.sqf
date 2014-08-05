@@ -7,6 +7,24 @@ _magicMenu = _this select 3;
 _attachPoint = "";
 _attachPos = [0,0,0];
 _loaded = false;
+_dummy = objNull;
+
+if (_item == player getVariable ["AGM_carriedItem", objNull]) then {
+	player call AGM_Drag_fnc_releaseObject;
+};
+
+// add default items
+_items = _vehicle getVariable "AGM_Logistics_loadedItems";
+if (isNil "_items") then {
+	switch (true) do {
+		case (_vehicle isKindOf "Car_F") : {
+			[_vehicle] call compile preprocessFileLineNumbers "\AGM_Logistics\scripts\itemsCar.sqf";
+		};
+		case (_vehicle isKindOf "Tank_F") : {
+			[_vehicle] call compile preprocessFileLineNumbers "\AGM_Logistics\scripts\itemsTank.sqf";
+		};
+	};
+};
 
 _size = getNumber(ConfigFile >> "CfgVehicles" >> Typeof(_item) >> "AGM_Size");
 if (!_magicMenu) then {
@@ -29,16 +47,18 @@ if (!_magicMenu) then {
 		_loadedItems set [count _loadedItems, _item];
 		_vehicle setVariable ["AGM_Logistics_loadedItems", _loadedItems, true];
 		_loaded = true;
-		_vehicle = AGM_Logistics_loadedItemsDummy;
+		_dummy = AGM_Logistics_loadedItemsDummy;
 	};
 };
 
 if (_Loaded) then {
-	0 spawn AGM_Logistics_dropItem;
-	_item attachTo [_vehicle, _attachPos, _attachPoint];
+	//0 spawn AGM_Logistics_dropItem;
+	_item attachTo [_dummy, _attachPos, _attachPoint];
 	
 	_itemName = getText (configFile >> "CfgVehicles" >> typeOf _item >> "displayName");
 	_vehicleName = getText (configFile >> "CfgVehicles" >> typeOf _vehicle >> "displayName");
 
-	[format ["%1 loaded into %2", _itemName, _vehicleName], true] call AGM_Core_fnc_displayText;
+	[format [localize "STR_AGM_Logistics_LoadedItem", _itemName, _vehicleName]] call AGM_Core_fnc_displayTextStructured;
 };
+
+_item setVariable ["AGM_isUsedBy", objNull, true];

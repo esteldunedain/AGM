@@ -20,6 +20,7 @@ class CfgFunctions {
       class blinking;
       class fatigueModule;
       class heartbeat;
+      class getWeight;
       class recoil;
       class stumble;
       class vision;
@@ -56,6 +57,13 @@ class CfgSounds {
   };
 };
 
+class AGM_Core_Options {
+  class useImperial {
+    displayName = "$STR_AGM_Movement_UseImperial";
+    default = 0;
+  };
+};
+
 //DEFAULT
 /*
 MinValue1 = 0.1;
@@ -77,6 +85,7 @@ class CfgVehicles {
     function = "AGM_Movement_fnc_fatigueModule";
     scope = 2;
     isGlobal = 1;
+    icon = "\AGM_Movement\UI\IconFatigue_ca.paa";
     class Arguments {
       class CoefFatigue {
         displayName = "Getting Tired Coef.";
@@ -140,7 +149,7 @@ class CfgMovesMaleSdr: CfgMovesBasic {
     };
 
     class AmovPercMwlkSlowWrflDf: AmovPercMstpSlowWrflDnon {
-      speed = 0.206897;
+      //speed = "1.3*0.206897";
       file = "\A3\anims_f\Data\Anim\Sdr\Mov\Erc\Wlk\Low\Rfl\AmovPercMwlkSlowWrflDf_ver2";
       leftHandIKCurve[] = {1};
     };

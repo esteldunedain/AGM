@@ -7,7 +7,7 @@ class CfgPatches {
     version = "0.92";
     versionStr = "0.92";
     versionAr[] = {0,92,0};
-    author[] = {"commy2"};
+    author[] = {"commy2", "CAA-Picard"};
     authorUrl = "https://github.com/commy2/";
   };
 };
@@ -30,11 +30,16 @@ class CfgVehicles {
     class AGM_SelfActions {
       class AGM_RepackMagazines {
         displayName = "$STR_AGM_MagazineRepack_RepackMagazines";
-        condition = "call AGM_Interaction_fnc_canInteract";
+        condition = "true";
         statement = "call AGM_MagazineRepack_fnc_magazineRepack";
         showDisabled = 0;
         priority = -2;
       };
     };
   };
+};
+
+class AGM_Parameters {
+  AGM_MagazineRepack_TimePerAmmo = 1.5;
+  AGM_MagazineRepack_TimePerMagazine = 2.0;
 };

@@ -19,6 +19,8 @@ _this spawn {
   AGM_Medical_diagnoseCallback = {
     _unit = _this select 0;
 
+    player setVariable ["AGM_CanTreat", true, false];
+
     _damages = [
       ["HitHead",     floor ((_unit getHitPointDamage "HitHead")     * 100) / 100],
       ["HitBody",     floor ((_unit getHitPointDamage "HitBody")     * 100) / 100],
@@ -53,30 +55,42 @@ _this spawn {
       };
 
       // Injuries
-      _heavyinjuries = "";
-      {
-        if ((_x select 1) >= 0.5) then {
-          if (_heavyinjuries != "") then { _heavyinjuries = _heavyinjuries + ", "; };
-          _heavyinjuries = _heavyinjuries + localize (format ["STR_AGM_Medical_%1", (_x select 0)]);
+      if (AGM_Medical_SingleBandage > 0) then {
+        if (damage _unit >= 0.5) then {
+          _string = _string + "<br/><br/>" + localize "STR_AGM_Medical_PatientHeavilyInjured";
         };
-      } forEach _damages;
-      if (_heavyinjuries != "") then {
-        _string = _string + "<br/><br/>" + (localize "STR_AGM_Medical_PatientHeavyInjuries") + " " + _heavyinjuries;
-      };
-
-      _lightinjuries = "";
-      {
-        if ((_x select 1) < 0.5 and (_x select 1) > 0.01) then {
-          if (_lightinjuries != "") then { _lightinjuries = _lightinjuries + ", "; };
-          _lightinjuries = _lightinjuries + localize (format ["STR_AGM_Medical_%1", (_x select 0)]);
+        if (damage _unit < 0.5 and damage _unit > 0) then {
+          _string = _string + "<br/><br/>" + localize "STR_AGM_Medical_PatientLightlyInjured";
         };
-      } forEach _damages;
-      if (_lightinjuries != "") then {
-        _string = _string + "<br/><br/>" + (localize "STR_AGM_Medical_PatientLightInjuries") + " " + _lightinjuries;
-      };
+        if (damage _unit == 0) then {
+          _string = _string + "<br/><br/>" + localize "STR_AGM_Medical_PatientNotInjured";
+        };
+      } else {
+        _heavyinjuries = "";
+        {
+          if ((_x select 1) >= 0.5) then {
+            if (_heavyinjuries != "") then { _heavyinjuries = _heavyinjuries + ", "; };
+            _heavyinjuries = _heavyinjuries + localize (format ["STR_AGM_Medical_%1", (_x select 0)]);
+          };
+        } forEach _damages;
+        if (_heavyinjuries != "") then {
+          _string = _string + "<br/><br/>" + (localize "STR_AGM_Medical_PatientHeavyInjuries") + " " + _heavyinjuries;
+        };
 
-      if (_lightinjuries == "" and _heavyinjuries == "") then {
-        _string = _string + "<br/><br/>" + localize "STR_AGM_Medical_PatientNotInjured";
+        _lightinjuries = "";
+        {
+          if ((_x select 1) < 0.5 and (_x select 1) > 0.01) then {
+            if (_lightinjuries != "") then { _lightinjuries = _lightinjuries + ", "; };
+            _lightinjuries = _lightinjuries + localize (format ["STR_AGM_Medical_%1", (_x select 0)]);
+          };
+        } forEach _damages;
+        if (_lightinjuries != "") then {
+          _string = _string + "<br/><br/>" + (localize "STR_AGM_Medical_PatientLightInjuries") + " " + _lightinjuries;
+        };
+
+        if (_lightinjuries == "" and _heavyinjuries == "") then {
+          _string = _string + "<br/><br/>" + localize "STR_AGM_Medical_PatientNotInjured";
+        };
       };
 
       // Blood
@@ -119,8 +133,6 @@ _this spawn {
     _string = _string + "</t>";
     [composeText [lineBreak, parseText _string]] call AGM_Medical_fnc_displayText;
 
-    player setVariable ["AGM_CanTreat", true, false];
-
     if (profileNamespace getVariable ["AGM_keepMedicalMenuOpen", false]) then {
       if (_unit == player) then {
         "AGM_Medical" call AGM_Interaction_fnc_openMenuSelf;
@@ -141,6 +153,7 @@ _this spawn {
     player setVariable ["AGM_CanTreat", false, false];
 
     [DIAGNOSETIME, _this, "AGM_Medical_diagnoseCallback", localize "STR_AGM_Medical_Diagnosing", "AGM_Medical_diagnoseAbort"] call AGM_Core_fnc_progressBar;
+    [_unit, true] call AGM_Core_fnc_closeDialogIfTargetMoves;
   } else {
     _this call AGM_Medical_diagnoseCallback;
   };

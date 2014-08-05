@@ -182,10 +182,13 @@ class CfgFunctions {
       file = "AGM_Core\functions";
       class adminKick;
       class binarizeNumber;
+      class canInteractWith;
+      class claim;
+      class closeDialogIfTargetMoves;
       class codeToString;
       class convertKeyCode;
-      class createUpdateLoop;
       class disableUserInput;
+      class disableUserInput2;
       class displayText;
       class displayTextPicture;
       class displayTextStructured;
@@ -210,6 +213,7 @@ class CfgFunctions {
       class getWindDirection;
       class goKneeling;
       class hadamardProduct;
+      class inTransitionAnim;
       class isAutoWind;
       class isEngineer;
       class isInBuilding;
@@ -231,6 +235,12 @@ class CfgFunctions {
       class toBin;
       class toBitmask;
       class toHex;
+    };
+  };
+  class AGM_Debug {
+    class AGM_Debug {
+      file = "AGM_Core\functions\Debug";
+      class showUser;
     };
   };
 };
@@ -258,7 +268,7 @@ class Extended_PostInit_EventHandlers {
 class Extended_Init_EventHandlers {
   class CAManBase {
     class AGM_SetName {
-      Init = "if (local (_this select 0)) then {_this call AGM_Core_fnc_setName};";
+      init = "if (local (_this select 0)) then {_this call AGM_Core_fnc_setName};";
     };
   };
 };
@@ -266,7 +276,7 @@ class Extended_Init_EventHandlers {
 class Extended_Local_EventHandlers {
   class CAManBase {
     class AGM_SetName {
-      serverLocal = "if (_this select 1) then {_this call AGM_Core_fnc_setName};";
+      local = "if (_this select 1) then {_this call AGM_Core_fnc_setName};";
     };
   };
 };
@@ -288,6 +298,7 @@ class CfgVehicles {
     function = "AGM_Core_fnc_moduleCheckPBOs";
     scope = 2;
     isGlobal = 1;
+    icon = "\AGM_Core\UI\IconCheckPBO_ca.paa";
     class Arguments {
       class Action {
         displayName = "Action";
@@ -393,6 +404,7 @@ class AGM_Rsc_Control_Base {
   h = 0;
 };
 
+class AGM_Core_canInteractConditions {};
 
 #include <MainMenu.hpp>
 #include <MenuConfig.hpp>
